@@ -1,0 +1,44 @@
+-- 1 
+
+WITH RECURSIVE dates AS (
+  SELECT CURDATE() AS date, 1 AS n
+  UNION ALL
+  SELECT DATE_ADD(date, INTERVAL (FLOOR(RAND() * 6) + 2) DAY), n+1
+  FROM dates
+  WHERE n < 100
+)
+SELECT date FROM dates;
+
+-- 2
+
+SELECT e.id,e.name,
+  COUNT(s.id) AS sales_c,
+  RANK() OVER (ORDER BY COUNT(s.id) DESC) AS sales_rank_c,
+  SUM(s.price) AS sales_s,
+  RANK() OVER (ORDER BY SUM(s.price) DESC) AS sales_rank_s
+FROM employee e
+LEFT JOIN sales s
+ON e.id = s.employee_id
+GROUP BY e.id,e.name
+ORDER BY sales_rank_c ASC,sales_rank_s ASC;
+
+-- 3
+
+SELECT 
+    from AS acc,
+    MIN(tdate) AS dt_from,
+    COALESCE(MAX(prev_tdate), '3000-01-01') AS dt_to,
+    SUM(amount) AS balance
+FROM transfers t1
+LEFT JOIN (SELECT from, tdate AS prev_tdate FROM transfers) t2 ON t1.from = t2.from AND t1.tdate > t2.prev_tdate
+GROUP BY acc, balance
+HAVING MIN(tdate) = MIN(dt_to)
+UNION
+SELECT 
+    from AS acc,
+    MAX(tdate) AS dt_from,
+    '3000-01-01' AS dt_to,
+    SUM(amount) AS balance
+FROM transfers
+GROUP BY acc, balance
+HAVING COUNT(*) = 1;
