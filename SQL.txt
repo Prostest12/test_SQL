@@ -1,4 +1,4 @@
--- 1 задание
+-- task 1
 
 WITH RECURSIVE dates AS (
   SELECT CURDATE() AS date, 1 AS n
@@ -9,7 +9,7 @@ WITH RECURSIVE dates AS (
 )
 SELECT date FROM dates;
 
--- 2 задание
+-- task 2
 
 SELECT e.id, e.name, s.sales_c, s.sales_rank_c, s.sales_s, s.sales_rank_s
 FROM employee AS e
@@ -25,7 +25,7 @@ JOIN (
 ) AS s ON e.id = s.employee_id
 ORDER BY s.sales_c DESC, s.sales_s DESC;
 
--- 3 задание
+-- task 3
 
 SELECT 
     from_id AS acc,
