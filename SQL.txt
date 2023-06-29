@@ -27,21 +27,32 @@ ORDER BY s.sales_c DESC, s.sales_s DESC;
 
 -- task 3
 
-SELECT 
+WITH recursive account_periods AS (
+  SELECT
     from_id AS acc,
-    MIN(tdate) AS dt_from,
-    COALESCE(MAX(prev_tdate), '3000-01-01') AS dt_to,
-    SUM(amount) AS balance
-FROM transfers t1
-LEFT JOIN (SELECT from_id, tdate AS prev_tdate FROM transfers) t2 ON t1.from_id = t2.from_id AND t1.tdate > t2.prev_tdate
-GROUP BY acc, balance
-HAVING MIN(tdate) = dt_from
-UNION
-SELECT 
-    from_id AS acc,
-    MAX(tdate) AS dt_from,
-    '3000-01-01' AS dt_to,
-    SUM(amount) AS balance
-FROM transfers
-GROUP BY acc, balance
-HAVING COUNT(*) = 1;
+    tdate AS dt_from,
+    tdate AS dt_to,
+    -amount AS balance  
+  FROM
+    transfers
+  UNION ALL
+  SELECT
+    ap.acc,
+    CASE WHEN tdate = DATE_ADD(ap.dt_to, INTERVAL 1 DAY) THEN ap.dt_from ELSE tdate END,
+    CASE WHEN tdate = DATE_ADD(ap.dt_to, INTERVAL 1 DAY) THEN tdate ELSE '3000-01-01' END,
+    CASE WHEN to = ap.acc THEN amount ELSE -amount END 
+  FROM
+    transfers t
+    INNER JOIN account_periods ap ON ap.acc = t.from_id AND ap.dt_to >= t.tdate - INTERVAL 1 DAY
+)
+SELECT
+  acc,
+  DATE_FORMAT(dt_from, '%d.%m.%Y') AS dt_from,
+  DATE_FORMAT(dt_to, '%d.%m.%Y') AS dt_to,
+  SUM(balance) AS balance
+FROM
+  account_periods
+GROUP BY
+  acc, dt_from, dt_to
+ORDER BY
+  acc, dt_from;
